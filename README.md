@@ -4,11 +4,19 @@ Makes [DTFM tones](http://www.dialabc.com/sound/dtmf.html) and saves them to a w
 
 ## Usage
 
-    USAGE: tone.rb <outputname.wav> tone1 ...
+	./tone.rb [options] <digits> <outputfile>
+		-p, --pause PAUSE              Sets delay between each tone (in seconds)
+		-h, --help                     Displays this usage message
+		<digits>                       Specifies digit tones to emulate
+		<outputfile>                   Specifies name of output wave file
 
 For example, to generate the noise of dialing "1234":
 
-    tone.rb dialing.wav 1 2 3 4
+    tone.rb 1234 dialing.wav
+
+To do the same with a tenth of a second delay instead of our default half a second:
+
+    tone.rb -p 0.1 1234 dialing.wav
 
 ## Dependencies
 
