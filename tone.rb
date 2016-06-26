@@ -5,7 +5,6 @@ require 'optparse'
 SAMPLE_RATE = 22050 # Hertz
 TONE_LENGTH = SAMPLE_RATE / 2 # Half a second
 TWO_PI = 2 * Math::PI
-Volume = 0.3 # 0.0 is silent, 1.0 is max volume (amplitude)
 
 # Adds two sine waves together to make a DTFM tone
 def generate_tone(freq1, freq2, amplitude)
@@ -38,33 +37,49 @@ def generate_sine_wave(num_samples, frequency, max_amplitude)
 	return samples
 end
 
-# Here's all the sounds we'll need, including silence
-digits = []
-digits.push(generate_tone(941.0, 1336.0, Volume)) # 0
-digits.push(generate_tone(697.0, 1209.0, Volume)) # 1
-digits.push(generate_tone(697.0, 1336.0, Volume)) # 2
-digits.push(generate_tone(697.0, 1477.0, Volume)) # 3
-digits.push(generate_tone(770.0, 1209.0, Volume)) # 4
-digits.push(generate_tone(770.0, 1336.0, Volume)) # 5
-digits.push(generate_tone(770.0, 1477.0, Volume)) # 6
-digits.push(generate_tone(852.0, 1209.0, Volume)) # 7
-digits.push(generate_tone(852.0, 1336.0, Volume)) # 8
-digits.push(generate_tone(852.0, 1477.0, Volume)) # 9
-format = WaveFile::Format.new(:mono, :float, SAMPLE_RATE)
+# Calculates all the tones we need for different digits
+def generateDigits(volume)
+	digits = []
+	digits.push(generate_tone(941.0, 1336.0, volume)) # 0
+	digits.push(generate_tone(697.0, 1209.0, volume)) # 1
+	digits.push(generate_tone(697.0, 1336.0, volume)) # 2
+	digits.push(generate_tone(697.0, 1477.0, volume)) # 3
+	digits.push(generate_tone(770.0, 1209.0, volume)) # 4
+	digits.push(generate_tone(770.0, 1336.0, volume)) # 5
+	digits.push(generate_tone(770.0, 1477.0, volume)) # 6
+	digits.push(generate_tone(852.0, 1209.0, volume)) # 7
+	digits.push(generate_tone(852.0, 1336.0, volume)) # 8
+	digits.push(generate_tone(852.0, 1477.0, volume)) # 9
+	return digits
+end
+
 
 if __FILE__ == $0
 	pauseLength = nil
+	volume = nil
 
 	usage = "#{$0} [options] <digits> <outputfile>\n"
-	usage += "\t-p, --pause PAUSE              Sets delay between each tone (in seconds)\n"
-	usage += "\t-h, --help                     Displays this usage message\n"
-	usage += "\t<digits>                       Specifies digit tones to emulate\n"
-	usage += "\t<outputfile>                   Specifies name of output wave file\n"
+	usage += "\t-p, --pause PAUSE             Sets delay between each tone (in seconds)\n"
+	usage += "\t-v, --volume VOLUME           Sets volume between 0 (silent) and 1 (max)\n"
+	usage += "\t-h, --help                    Displays this usage message\n"
+	usage += "\t<digits>                      Specifies digit tones to emulate\n"
+	usage += "\t<outputfile>                  Specifies name of output wave file\n"
 
 	OptionParser.new do |o|
-		o.on('-p [PAUSE]', "--pause [PAUSE]", "Delay between each tone") {|b| pauseLength = b}
-		o.on('-h', "--help", "Prints usage") {puts usage; exit}
+		o.on('-p [PAUSE]', "--pause [PAUSE]") {|b| pauseLength = b}
+		o.on('-h', "--help") {puts usage; exit}
+		o.on('-v [VOLUME]', "--volume [VOLUME]") do |b|
+			volume = b.to_f
+			if(volume == 0.0 or volume > 1.0)
+				puts "Volume must be above 0 and below 1!"
+			end
+		end
 		o.parse!
+	end
+
+	# If user didn't set a volume then we default to one third max.
+	if( volume == nil )
+		volume = 0.3
 	end
 
 	# Alright, calculate how long each pause should be to get the desired delay.
@@ -73,7 +88,6 @@ if __FILE__ == $0
 		pauseLength = 0.5
 	end
 	pauseLength = (SAMPLE_RATE * pauseLength.to_f).round
-	silence = WaveFile::Buffer.new(([0] * pauseLength), format)
 
 	if( ARGV.size != 2 )
 		puts usage
@@ -84,7 +98,10 @@ if __FILE__ == $0
 	sequence = ARGV.pop.split(//).map {|d| d.to_i}
 
 	print "Recording tone "
+	format = WaveFile::Format.new(:mono, :float, SAMPLE_RATE)
 	pcm_format = WaveFile::Format.new(:mono, :pcm_16, SAMPLE_RATE)
+	silence = WaveFile::Buffer.new(([0] * pauseLength), format)
+	digits = generateDigits(volume)
 	WaveFile::Writer.new(file, pcm_format) do |writer|
 		for digit in sequence
 			if( digit < 0 or digit > 9 )
