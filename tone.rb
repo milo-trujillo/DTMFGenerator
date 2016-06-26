@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'wavefile'
+require 'optparse'
 
 SAMPLE_RATE = 22050 # Hertz
 TONE_LENGTH = SAMPLE_RATE / 2 # Half a second
@@ -50,26 +51,50 @@ digits.push(generate_tone(852.0, 1209.0, Volume)) # 7
 digits.push(generate_tone(852.0, 1336.0, Volume)) # 8
 digits.push(generate_tone(852.0, 1477.0, Volume)) # 9
 format = WaveFile::Format.new(:mono, :float, SAMPLE_RATE)
-silence = WaveFile::Buffer.new(([0] * TONE_LENGTH), format)
 
 if __FILE__ == $0
-	if( ARGV.size < 2 )
-		puts "USAGE: #{$0} <outputname.wav> tone1 ..."
+	pauseLength = nil
+
+	usage = "#{$0} [options] <digits> <outputfile>\n"
+	usage += "\t-p, --pause PAUSE              Sets delay between each tone (in seconds)\n"
+	usage += "\t-h, --help                     Displays this usage message\n"
+	usage += "\t<digits>                       Specifies digit tones to emulate\n"
+	usage += "\t<outputfile>                   Specifies name of output wave file\n"
+
+	OptionParser.new do |o|
+		o.on('-p [PAUSE]', "--pause [PAUSE]", "Delay between each tone") {|b| pauseLength = b}
+		o.on('-h', "--help", "Prints usage") {puts usage; exit}
+		o.parse!
+	end
+
+	# Alright, calculate how long each pause should be to get the desired delay.
+	# We default to half a second.
+	if( pauseLength == nil )
+		pauseLength = 0.5
+	end
+	pauseLength = (SAMPLE_RATE * pauseLength.to_f).round
+	silence = WaveFile::Buffer.new(([0] * pauseLength), format)
+
+	if( ARGV.size != 2 )
+		puts usage
 		exit
 	end
 
-	file = ARGV.shift
-	sequence = ARGV.map { |d| d.to_i }
+	file = ARGV.pop
+	sequence = ARGV.pop.split(//).map {|d| d.to_i}
 
+	print "Recording tone "
 	pcm_format = WaveFile::Format.new(:mono, :pcm_16, SAMPLE_RATE)
 	WaveFile::Writer.new(file, pcm_format) do |writer|
 		for digit in sequence
 			if( digit < 0 or digit > 9 )
 				next
 			end
+			print "#{digit} "
 			buffer = WaveFile::Buffer.new(digits[digit], format)
 			writer.write(buffer)
 			writer.write(silence)
 		end
 	end
+	puts ""
 end
