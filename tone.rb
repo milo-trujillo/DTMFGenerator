@@ -6,7 +6,7 @@ SAMPLE_RATE = 22050 # Hertz
 TONE_LENGTH = SAMPLE_RATE / 2 # Half a second
 TWO_PI = 2 * Math::PI
 
-# Adds two sine waves together to make a DTFM tone
+# Adds two sine waves together to make a DTMF tone
 def generate_tone(freq1, freq2, amplitude)
 	wav1 = generate_sine_wave(TONE_LENGTH, freq1, amplitude)
 	wav2 = generate_sine_wave(TONE_LENGTH, freq2, amplitude)

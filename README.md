@@ -1,6 +1,6 @@
-# DTFM Tone Generator
+# DTMF Tone Generator
 
-Makes [DTFM tones](http://www.dialabc.com/sound/dtmf.html) and saves them to a wave file. Maybe useful for phone phreaking in the 60s or 70s, now it's pretty much a novelty. You can test that it works by [submitting your wave file](http://dialabc.com/sound/detect/index.html) for testing.
+Makes [DTMF tones](http://www.dialabc.com/sound/dtmf.html) and saves them to a wave file. Maybe useful for phone phreaking in the 60s or 70s, now it's pretty much a novelty. You can test that it works by [submitting your wave file](http://dialabc.com/sound/detect/index.html) for testing.
 
 ## Usage
 
